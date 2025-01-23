@@ -38,6 +38,8 @@ class DocumentoService:
             'texto_5': 'La entrega de la posesión de las áreas y servicios comunes del Condominio se realizará en el mes de diciembre de 202x.',
             'texto_7': '',
             'texto_8': '',
+            'texto_9': '',
+            'texto_10': 'Según el cronograma de pago indicado en el Numeral 10 del Anexo 5: Hoja Resumen',
 
             # Fecha
             'day': request.day or '',
@@ -89,7 +91,11 @@ class DocumentoService:
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-
+        'texto_9':'El saldo de US$ --- (--- con 00/100 dólares americanos), que será cancelado',
+        'texto_10': 'según el cronograma de pago indicado en el Numeral 10 del Anexo 5: Hoja Resumen', 
+        'texto_11': '',
+        'texto_12': '',
+        
         #day and month
         'day': request.day or '',
         'month': request.month or '',
@@ -138,7 +144,11 @@ class DocumentoService:
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-    
+        'texto_9':'El saldo de US$ --- (--- con 00/100 dólares americanos), que será cancelado',
+        'texto_10':'',
+        'texto_11': 'según lo siguiente:',
+        'texto_12': '(i)	La suma de US$ --- (--- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (ii)	La suma de US$ --- (--- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (iii)	(….)',
+        
         #day and month
         'day': request.day or '',
         'month': request.month or '',
@@ -235,7 +245,7 @@ class DocumentoService:
     def dejar_el_marcador(document):
         
         valores = {
-            '{eliminar}': ' '
+            '${eliminar}': ''
         }
         
         # Iterar sobre todos los párrafos del documento y reemplazar los marcadores
