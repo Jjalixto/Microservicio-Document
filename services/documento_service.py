@@ -2,6 +2,13 @@ from models.document_request import DocumentRequest
 from docx import Document
 from docxtpl import DocxTemplate
 
+import xlwings as xw
+import openpyxl
+from datetime import datetime
+from docx.shared import Pt
+from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls
+
 class DocumentoService:
     
     @staticmethod
@@ -75,7 +82,119 @@ class DocumentoService:
         DocumentoService.eliminar_parrafos_innecesarios(document)
         DocumentoService.eliminar_desde_marcador(document, '${eliminar}')
         
-        document.save('documento_contado_final.docx')
+        ruta_word = './documento_contado_final.docx'
+        ruta_excel='lib/calculadora.xlsx'
+        
+        document.save(ruta_word)
+        
+        DocumentoService.actualizar_excel(ruta_excel, request)
+        
+        # Leer datos del archivo Excel
+        tabla_datos = DocumentoService.leer_datos_excel(ruta_excel)
+        DocumentoService.actualizar_documento_word(ruta_word, tabla_datos)
+        
+        print("documento word actualizado y guardado")
+        
+        
+    @staticmethod
+    def actualizar_excel(ruta_excel, request: DocumentRequest):
+        fecha = datetime.strptime(request.fecha_primera_cuota, '%d/%m/%Y')
+        app = xw.App(visible=False)
+        wb = xw.Book(ruta_excel)
+        try:
+            hoja1 = wb.sheets['Calculadora']
+            hoja1.range('C1').value = request.monto_venta  # Inserta un valor en la celda C1
+            hoja1.range('C2').value = request.cuota_inicial   # Inserta un valor en la celda C2
+            hoja1.range('C4').value = request.cantidad_anios      # Inserta un valor en la celda C4
+            hoja1.range('C5').value = fecha  # Inserta una fecha en la celda C5
+            wb.save()
+        finally:
+            wb.close()
+            app.quit()
+            
+    @staticmethod
+    def leer_datos_excel(ruta_archivo):
+        """
+        Lee los datos calculados del archivo Excel desde la hoja 'Calculadora'.
+        """
+        workbook = openpyxl.load_workbook(ruta_archivo, data_only=True)
+        hoja1 = workbook['Calculadora']
+
+        tabla_datos_hoja1 = []
+        fila = 12  # Comenzamos desde la fila 12
+        while True:
+            celda_b = hoja1[f'B{fila}'].value
+            if celda_b is None or celda_b == 0 or celda_b == '':
+                break
+
+            fila_datos = [hoja1[f'{col}{fila}'].value for col in ['B', 'C', 'E', 'F', 'G', 'H', 'I', 'J']]
+            tabla_datos_hoja1.append(fila_datos)
+            fila += 1
+        
+        return tabla_datos_hoja1
+    
+    def actualizar_documento_word(ruta_archivo_word, tabla_datos):
+        """
+        Actualiza el documento Word reemplazando el marcador '${cronograma}' con una tabla.
+        """
+        doc = Document(ruta_archivo_word)
+        DocumentoService.agregar_tabla_word(doc, '${cronograma}', tabla_datos)
+        doc.save(ruta_archivo_word)
+    
+    def agregar_tabla_word(doc, marcador, tabla_datos_hoja1):
+        
+    # Buscar y reemplazar `${cronograma}` con la tabla en su lugar
+        for paragraph in doc.paragraphs:
+            if '${cronograma}' in paragraph.text:
+                paragraph.text = paragraph.text.replace('${cronograma}', '')  # Quitar la cadena de marcador
+
+                # Insertar la tabla justo después del párrafo
+                if tabla_datos_hoja1:
+                    # Crear la tabla
+                    tabla = doc.add_table(rows=1, cols=len(tabla_datos_hoja1[0]))
+                    hdr_cells = tabla.rows[0].cells
+                    encabezados = ['Nro Cuota', 'Fecha de Vencimiento', 'Saldo Capital', 'Cuota Capital', 'Cuota Interés', 'Cuota Admin.', 'Cuota ITF', 'Cuota Total']
+
+                    # Insertar encabezados con formato
+                    for i, header in enumerate(encabezados):
+                        hdr_cells[i].text = header
+                        hdr_cells[i]._element.get_or_add_tcPr().append(
+                            parse_xml(r'<w:shd {} w:fill="CCFFCC"/>'.format(nsdecls('w')))
+                        )
+                        for p in hdr_cells[i].paragraphs:
+                            for run in p.runs:
+                                run.font.size = Pt(8)
+
+                    # Insertar filas de datos
+                    for fila_datos in tabla_datos_hoja1:
+                        row_cells = tabla.add_row().cells
+                        for i, valor in enumerate(fila_datos):
+                            if i == 1 and isinstance(valor, datetime):  # Formato de fecha
+                                row_cells[i].text = valor.strftime('%Y-%m-%d')
+                            elif i >= 2:  # Formato de números con dos decimales
+                                row_cells[i].text = f"{valor:.2f}" if isinstance(valor, (int, float)) else ''
+                            else:
+                                row_cells[i].text = str(valor) if valor is not None else ''
+                            for p in row_cells[i].paragraphs:
+                                for run in p.runs:
+                                    run.font.size = Pt(8)
+
+                    # Aplicar bordes a la tabla
+                    tbl_xml = tabla._tbl
+                    tbl_borders = parse_xml(
+                        r'<w:tblBorders {}>'
+                        r'  <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+                        r'  <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+                        r'  <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+                        r'  <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+                        r'  <w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+                        r'  <w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/>'
+                        r'</w:tblBorders>'.format(nsdecls('w'))
+                    )
+                    tbl_xml.tblPr.append(tbl_borders)
+
+                    # Mover la tabla al lugar del marcador usando `addnext`
+                    paragraph._p.addnext(tabla._element)
     
     @staticmethod
     def financed_type(request: DocumentRequest, document: Document):
@@ -130,7 +249,19 @@ class DocumentoService:
         DocumentoService.reemplazar_marcadores(document, valores)
         DocumentoService.dejar_el_marcador(document)
         
-        document.save('documento_financiado_final.docx')
+        ruta_word = './documento_financiado_final.docx'
+        ruta_excel='lib/calculadora.xlsx'
+
+        document.save(ruta_word)
+        
+        DocumentoService.actualizar_excel(ruta_excel, request)
+        
+        # Leer datos del archivo Excel
+        tabla_datos = DocumentoService.leer_datos_excel(ruta_excel)
+        DocumentoService.actualizar_documento_word(ruta_word, tabla_datos)
+        
+        print("documento word actualizado y guardado")
+        
     
     @staticmethod
     def fractionated_type(request: DocumentRequest, document: Document):
