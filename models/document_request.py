@@ -6,6 +6,9 @@ class DocumentRequest(BaseModel):
     #Definimos el tipo de contrato
     condicion: str
     
+    #Definimos cuantos propietarios tendra el contrato
+    propietario:int
+    
     #Datos para el contrato para el word
     name_1: Optional[str] = ''
     dni_1: Optional[str] = ''

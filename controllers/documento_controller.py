@@ -11,8 +11,9 @@ async def saludo():
 @router.post("/generate-document", status_code=201)
 async def generate_document(request: DocumentRequest):
     try:
-        DocumentoService.process_request(request)
-        return {"message": "Documento generado exitosamente."}
+        documento_service = DocumentoService()
+        result = documento_service.servicioCentral(request)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
