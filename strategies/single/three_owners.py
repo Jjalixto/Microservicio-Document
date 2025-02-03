@@ -1,4 +1,4 @@
-from .contract_strategy import ContractStrategy
+from ..contract_strategy import ContractStrategy
 from models.document_request import DocumentRequest
 
 class ThreeOwners(ContractStrategy):

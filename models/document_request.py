@@ -3,11 +3,14 @@ from typing import Optional
 
 class DocumentRequest(BaseModel):
 
-    #Definimos el tipo de contrato
-    condicion: str
+    #primero evaluar si es casado viudo o divorciado
+    marital_status: str
     
     #Definimos cuantos propietarios tendra el contrato
     propietario:int
+    
+    #Definimos el tipo de contrato
+    condicion: str
     
     #Datos para el contrato para el word
     name_1: Optional[str] = ''

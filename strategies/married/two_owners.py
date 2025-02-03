@@ -1,9 +1,10 @@
-from .contract_strategy import ContractStrategy
+from ..contract_strategy import ContractStrategy
 from models.document_request import DocumentRequest
+from services.lote_service import LoteService
 
 import xlwings as xw
 import openpyxl
-
+import os
 from models.document_request import DocumentRequest
 from docx import Document
 from docxtpl import DocxTemplate
@@ -19,7 +20,7 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def process_request(request: DocumentRequest):
         #Carga del documento
-        document = DocxTemplate('lib/modelo.docx')
+        document = DocxTemplate('lib/Modelo-de-contrato-casado.docx')
         condicion = TwoOwners.validacion_condicion(request, document)
         
         return condicion
@@ -44,11 +45,13 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def counted_type(request: DocumentRequest, document: Document):
         
+        yearBatch = LoteService.searchYearLote(request.number_batch)
+        
         # Aquí se define el diccionario con los valores que se reemplazarán en el documento
         valores = {
             # Texto estático
-            'texto_4': 'La entrega de la posesión de el/los lote(s) se realizará en el mes de diciembre de 202x.',
-            'texto_5': 'La entrega de la posesión de las áreas y servicios comunes del Condominio se realizará en el mes de diciembre de 202x.',
+            'texto_4': yearBatch,
+            'texto_5': yearBatch,
             'texto_7': '',
             'texto_8': '',
             'texto_9': '',
@@ -104,14 +107,16 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def financed_type(request: DocumentRequest, document: Document):
         
+        yearBatch = LoteService.searchYearLote(request.number_batch)
+        
         valores = {
 
         #financed according to the table
         # 'texto_1':'Anexo Nº 5: Hoja Resumen',
         # 'texto_2':'El Comprador declara conocer que las indicadas son cuentas recaudadoras razón por la que ante el incumplimiento de pago en la fecha correspondiente incurrirá en mora automática sin necesidad de intimación previa; en consecuencia, se devengará un interés compensatorio diario de US$ 1.00 (Un y 00/100 dólares americanos), y un interés moratorio diario igual, ambos respecto del importe de la cuota adeudada, los cuales se cobrarán conjuntamente con la cuota pendiente de pago. El Comprador reconoce que los pagos deben efectuarse, obligatoriamente, a través de dicha cuenta recaudadora, considerándose esta como una obligación contractual <br> Sin perjuicio de ello, El Comprador declara conocer que, supletoriamente al sistema de recaudación mencionado, podrá realizar el pago de las cuotas mediante el acceso a un enlace de pago generado por la Vendedora y/o sistema de recaudación propuesto por la Vendedora; el mismo que también generará una mora automática compuesta por un interés compensatorio diario y un interés moratorio diario del mismo valor señalado en el párrafo anterior, siempre que incumple con el pago de la cuota en la fecha correspondiente. Las partes declaran que esta forma de pago también se considerara una obligación contractual y generará los efectos cancelatorios correspondientes. <br> Finalmente, el Comprador deberá informar y enviar a la Vendedora, los sustentos de pagos respectivos.',
         # 'texto_3':'Adicionalmente, las partes dejan constancia que, al amparo de lo dispuesto por el artículo 1583 del Código Civil, la Vendedora se reserva la propiedad de el/los lote(s) hasta la cancelación total del Precio de Venta.',
-        'texto_4':'La entrega de la posesión de el/los lote(s) se realizará en el mes de diciembre de 202x.',
-        'texto_5':'La entrega de la posesión de las áreas y servicios comunes del Condominio se realizará en el mes de diciembre de 202x.',
+        'texto_4': yearBatch,
+        'texto_5': yearBatch,
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
@@ -163,19 +168,62 @@ class TwoOwners(ContractStrategy):
         
         # Leer datos del archivo Excel
         tabla_datos = TwoOwners.leer_datos_excel(ruta_excel)
-        TwoOwners.actualizar_documento_word(ruta_word, tabla_datos)
+        parametros = TwoOwners.getCampoEspecifico(ruta_excel)
+        TwoOwners.actualizar_documento_word(ruta_word, tabla_datos, parametros)
+        
         
         return {"message": "Contrato financiado generado para dos propietarios."}
     
     @staticmethod
+    def actualizarCamposEspecificos(ruta_word, parametros):
+        """
+        Reemplaza los marcadores en el documento Word con los valores de `parametros`.
+        """
+        if not os.path.exists(ruta_word):
+            raise FileNotFoundError(f"El archivo {ruta_word} no existe.")
+
+        doc = Document(ruta_word)  # Carga el documento Word
+        
+        valores = {
+            '${precio_venta}': str(parametros['precio_venta']),
+            '${cuota_inicial}': str(parametros['cuota_inicial']),
+            '${saldo_financiado}': str(parametros['saldo_financiado']),
+            '${gasto_administrativo}': str(parametros['gasto_administrativo']),
+            '${precio_credito}': str(parametros['precio_credito']),
+            '${tcea}': str(parametros['tcea']),
+            '${numero_cuotas}': str(parametros['numero_cuotas']),
+            '${cuota_mensual}': str(parametros['cuota_mensual']),
+        }
+
+        # Recorre los párrafos y reemplaza los marcadores
+        for parrafo in doc.paragraphs:
+            for key, value in valores.items():
+                if key in parrafo.text:
+                    parrafo.text = parrafo.text.replace(key, value)
+
+        # Recorre las tablas (por si los valores están dentro de una tabla en el Word)
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for key, value in valores.items():
+                        if key in cell.text:
+                            cell.text = cell.text.replace(key, value)
+
+        # Guarda el documento con los valores actualizados
+        doc.save(ruta_word)  # Asegúrate de que tienes permisos de escritura
+    
+    @staticmethod
     def fractionated_type(request: DocumentRequest, document: Document):
+        
+        yearBatch = LoteService.searchYearLote(request.number_batch)
+        
         valores = {
 
         #financed according to the table
         # 'texto_2':'El Comprador declara conocer que las indicadas son cuentas recaudadoras razón por la que ante el incumplimiento de pago en la fecha correspondiente incurrirá en mora automática sin necesidad de intimación previa; en consecuencia, se devengará un interés compensatorio diario de US$ 1.00 (Un y 00/100 dólares americanos), y un interés moratorio diario igual, ambos respecto del importe de la cuota adeudada, los cuales se cobrarán conjuntamente con la cuota pendiente de pago. El Comprador reconoce que los pagos deben efectuarse, obligatoriamente, a través de dicha cuenta recaudadora, considerándose esta como una obligación contractual <br> Sin perjuicio de ello, El Comprador declara conocer que, supletoriamente al sistema de recaudación mencionado, podrá realizar el pago de las cuotas mediante el acceso a un enlace de pago generado por la Vendedora y/o sistema de recaudación propuesto por la Vendedora; el mismo que también generará una mora automática compuesta por un interés compensatorio diario y un interés moratorio diario del mismo valor señalado en el párrafo anterior, siempre que incumple con el pago de la cuota en la fecha correspondiente. Las partes declaran que esta forma de pago también se considerara una obligación contractual y generará los efectos cancelatorios correspondientes. <br> Finalmente, el Comprador deberá informar y enviar a la Vendedora, los sustentos de pagos respectivos.',
         # 'texto_3':'Adicionalmente, las partes dejan constancia que, al amparo de lo dispuesto por el artículo 1583 del Código Civil, la Vendedora se reserva la propiedad de el/los lote(s) hasta la cancelación total del Precio de Venta.',
-        'texto_4':'La entrega de la posesión de el/los lote(s) se realizará en el mes de diciembre de 202x.',
-        'texto_5':'La entrega de la posesión de las áreas y servicios comunes del Condominio se realizará en el mes de diciembre de 202x.',
+        'texto_4': yearBatch,
+        'texto_5': yearBatch,
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
@@ -261,13 +309,68 @@ class TwoOwners(ContractStrategy):
         return tabla_datos_hoja1
     
     @staticmethod
-    def actualizar_documento_word(ruta_archivo_word, tabla_datos):
+    def getCampoEspecifico(ruta_archivo):
+        """
+        Obtiene el valor de una celda específica de una hoja dada en el archivo Excel.
+        """
+        workbook = openpyxl.load_workbook(ruta_archivo, data_only=True)
+        
+        hoja1 = workbook['Calculadora']
+        
+        campos = {
+            "precio_venta" : hoja1['C1'].value,
+            "cuota_inicial" : hoja1['C2'].value,
+            "saldo_financiado" : hoja1['C3'].value,
+            "gasto_administrativo" : hoja1['C7'].value,
+            "precio_credito" : hoja1['C8'].value,
+            "tcea" : hoja1['H4'].value,
+            "numero_cuotas" : hoja1['H5'].value,
+            "cuota_mensual" : hoja1['C6'].value,
+        }
+        
+        workbook.close()
+        print(campos)
+        return campos
+    
+    @staticmethod
+    def actualizar_documento_word(ruta_archivo_word, tabla_datos, parametros):
         """
         Actualiza el documento Word reemplazando el marcador '${cronograma}' con una tabla.
         """
         doc = Document(ruta_archivo_word)
+        TwoOwners.reemplazar_campos_especificos(doc, parametros)
         TwoOwners.agregar_tabla_word(doc, tabla_datos)
         doc.save(ruta_archivo_word)
+    
+    @staticmethod
+    def reemplazar_campos_especificos(doc, parametros):
+        """
+        Reemplaza los marcadores en el documento Word con los valores extraídos del Excel.
+        """
+        valores = {
+            '${precio_venta}': str(parametros['precio_venta']),
+            '${cuota_inicial}': str(parametros['cuota_inicial']),
+            '${saldo_financiado}': str(parametros['saldo_financiado']),
+            '${gasto_administrativo}': str(parametros['gasto_administrativo']),
+            '${precio_credito}': str(parametros['precio_credito']),
+            '${tcea}': f"{parametros['tcea']:.2%}",  # Formateado como porcentaje
+            '${numero_cuotas}': str(parametros['numero_cuotas']),
+            '${cuota_mensual}': f"{parametros['cuota_mensual']:.2f}"
+        }
+
+        # Reemplazar en párrafos
+        for parrafo in doc.paragraphs:
+            for key, value in valores.items():
+                if key in parrafo.text:
+                    parrafo.text = parrafo.text.replace(key, value)
+
+        # Reemplazar en tablas (por si los valores están en celdas)
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for key, value in valores.items():
+                        if key in cell.text:
+                            cell.text = cell.text.replace(key, value)
     
     @staticmethod
     def agregar_tabla_word(doc,tabla_datos_hoja1):
