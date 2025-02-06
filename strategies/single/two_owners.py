@@ -19,7 +19,7 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def process_request(request: DocumentRequest):
         #Carga del documento
-        document = DocxTemplate('lib/modelo.docx')
+        document = DocxTemplate('lib/Contract-Single-Two.docx')
         condicion = TwoOwners.validacion_condicion(request, document)
         
         return condicion

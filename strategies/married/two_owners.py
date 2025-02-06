@@ -20,7 +20,7 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def process_request(request: DocumentRequest):
         #Carga del documento
-        document = DocxTemplate('lib/Modelo-de-contrato-casado.docx')
+        document = DocxTemplate('lib/Contract-Married.docx')
         condicion = TwoOwners.validacion_condicion(request, document)
         
         return condicion
@@ -175,44 +175,6 @@ class TwoOwners(ContractStrategy):
         return {"message": "Contrato financiado generado para dos propietarios."}
     
     @staticmethod
-    def actualizarCamposEspecificos(ruta_word, parametros):
-        """
-        Reemplaza los marcadores en el documento Word con los valores de `parametros`.
-        """
-        if not os.path.exists(ruta_word):
-            raise FileNotFoundError(f"El archivo {ruta_word} no existe.")
-
-        doc = Document(ruta_word)  # Carga el documento Word
-        
-        valores = {
-            '${precio_venta}': str(parametros['precio_venta']),
-            '${cuota_inicial}': str(parametros['cuota_inicial']),
-            '${saldo_financiado}': str(parametros['saldo_financiado']),
-            '${gasto_administrativo}': str(parametros['gasto_administrativo']),
-            '${precio_credito}': str(parametros['precio_credito']),
-            '${tcea}': str(parametros['tcea']),
-            '${numero_cuotas}': str(parametros['numero_cuotas']),
-            '${cuota_mensual}': str(parametros['cuota_mensual']),
-        }
-
-        # Recorre los párrafos y reemplaza los marcadores
-        for parrafo in doc.paragraphs:
-            for key, value in valores.items():
-                if key in parrafo.text:
-                    parrafo.text = parrafo.text.replace(key, value)
-
-        # Recorre las tablas (por si los valores están dentro de una tabla en el Word)
-        for table in doc.tables:
-            for row in table.rows:
-                for cell in row.cells:
-                    for key, value in valores.items():
-                        if key in cell.text:
-                            cell.text = cell.text.replace(key, value)
-
-        # Guarda el documento con los valores actualizados
-        doc.save(ruta_word)  # Asegúrate de que tienes permisos de escritura
-    
-    @staticmethod
     def fractionated_type(request: DocumentRequest, document: Document):
         
         yearBatch = LoteService.searchYearLote(request.number_batch)
@@ -270,6 +232,44 @@ class TwoOwners(ContractStrategy):
         document.save('documento_fraccionado_final.docx')
         
         return {"message": "Contrato fraccionado generado para dos propietarios."}
+    
+    @staticmethod
+    def actualizarCamposEspecificos(ruta_word, parametros):
+        """
+        Reemplaza los marcadores en el documento Word con los valores de `parametros`.
+        """
+        if not os.path.exists(ruta_word):
+            raise FileNotFoundError(f"El archivo {ruta_word} no existe.")
+
+        doc = Document(ruta_word)  # Carga el documento Word
+        
+        valores = {
+            '${precio_venta}': str(parametros['precio_venta']),
+            '${cuota_inicial}': str(parametros['cuota_inicial']),
+            '${saldo_financiado}': str(parametros['saldo_financiado']),
+            '${gasto_administrativo}': str(parametros['gasto_administrativo']),
+            '${precio_credito}': str(parametros['precio_credito']),
+            '${tcea}': str(parametros['tcea']),
+            '${numero_cuotas}': str(parametros['numero_cuotas']),
+            '${cuota_mensual}': str(parametros['cuota_mensual']),
+        }
+
+        # Recorre los párrafos y reemplaza los marcadores
+        for parrafo in doc.paragraphs:
+            for key, value in valores.items():
+                if key in parrafo.text:
+                    parrafo.text = parrafo.text.replace(key, value)
+
+        # Recorre las tablas (por si los valores están dentro de una tabla en el Word)
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for key, value in valores.items():
+                        if key in cell.text:
+                            cell.text = cell.text.replace(key, value)
+
+        # Guarda el documento con los valores actualizados
+        doc.save(ruta_word)  # Asegúrate de que tienes permisos de escritura
     
     @staticmethod
     def actualizar_excel(ruta_excel, request: DocumentRequest):
@@ -402,7 +402,7 @@ class TwoOwners(ContractStrategy):
                         row_cells = tabla.add_row().cells
                         for i, valor in enumerate(fila_datos):
                             if i == 1 and isinstance(valor, datetime):  # Formato de fecha
-                                row_cells[i].text = valor.strftime('%Y-%m-%d')
+                                row_cells[i].text = valor.strftime('%d-%m-%Y')
                             elif i >= 2:  # Formato de números con dos decimales
                                 row_cells[i].text = f"{valor:.2f}" if isinstance(valor, (int, float)) else ''
                             else:

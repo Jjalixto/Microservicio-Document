@@ -42,3 +42,7 @@ class DocumentRequest(BaseModel):
     cuota_inicial: Optional[str] = ''
     cantidad_anios: Optional[str] = ''
     fecha_primera_cuota: Optional[str] = ''
+    
+    #Datos para cuadros word
+    precio_letras: Optional[str] = ''
+    cuota_inicial_letras: Optional[str] = ''

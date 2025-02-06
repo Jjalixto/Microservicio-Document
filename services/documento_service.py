@@ -2,7 +2,6 @@ from models.document_request import DocumentRequest
 from strategies.married.two_owners import TwoOwners as MarriedTwoOwners
 from strategies.single.one_owner import OneOwner as SingleOneOwner
 from strategies.single.two_owners import TwoOwners as SingleTwoOwners
-from strategies.single.three_owners import ThreeOwners as SingleThreeOwners
 
 class DocumentoService:
     
@@ -25,8 +24,6 @@ class DocumentoService:
             strategy = SingleOneOwner()
         elif request.marital_status == "soltero" or request.propietario == 2:
             strategy = SingleTwoOwners()
-        elif request.marital_status == "soltero" or request.propietario == 3:
-            strategy = SingleThreeOwners()
         
         # Procesar la solicitud con la estrategia seleccionada
         return strategy.process_request(request)
