@@ -7,7 +7,7 @@ class DocumentRequest(BaseModel):
     marital_status: str
     
     #Definimos cuantos propietarios tendra el contrato
-    propietario:int
+    propietario:str
     
     #Definimos el tipo de contrato
     condicion: str
