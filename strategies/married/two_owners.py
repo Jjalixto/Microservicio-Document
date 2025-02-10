@@ -1,6 +1,7 @@
 from ..contract_strategy import ContractStrategy
 from models.document_request import DocumentRequest
 from services.lote_service import LoteService
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 import xlwings as xw
 import openpyxl
@@ -54,8 +55,11 @@ class TwoOwners(ContractStrategy):
             'texto_5': yearBatch,
             'texto_7': '',
             'texto_8': '',
+            'texto_8.1':'',
             'texto_9': '',
-            'texto_10': 'Según el cronograma de pago indicado en el Numeral 10 del Anexo 5: Hoja Resumen',
+            'texto_10':'',
+            'texto_11':'',
+            'texto_12':'',
 
             # Fecha
             'day': request.day or '',
@@ -83,6 +87,20 @@ class TwoOwners(ContractStrategy):
             # Datos del lote
             'number_batch': request.number_batch or '',
             'approximate_area': request.approximate_area or '',
+            
+            'monto_venta': f"{float(request.monto_venta):,.2f}" if request.monto_venta else '',
+            'monto_letras': request.monto_letras or '',
+            'monto_reserva': f"{float(request.monto_reserva):,.2f}" if request.monto_reserva else '',
+            'reserva_letras': request.reserva_letras or '',
+            'saldo_restante': f"{float(request.saldo_restante):,.2f}" if request.saldo_restante else '',
+            'saldo_restante_letras': request.saldo_restante_letras or '',
+            'cuota_inicial': f"{float(request.cuota_inicial):,.2f}" if request.cuota_inicial else '',
+            'day_c': request.day_c or '',
+            'month_c': request.month_c or '',
+            'year_c': request.year_c or '',
+            'cuo_init_letras': request.cuo_init_letras or '',
+            'cantidad_anios': request.cantidad_anios or '',
+            'fecha_primera_cuota': request.fecha_primera_cuota or '',
         }
         
         document.render(valores)
@@ -108,7 +126,9 @@ class TwoOwners(ContractStrategy):
     def financed_type(request: DocumentRequest, document: Document):
         
         yearBatch = LoteService.searchYearLote(request.number_batch)
-        
+
+        conversion = f"{float(request.saldo_restante):,.2f}" if request.saldo_restante else '',
+            
         valores = {
 
         #financed according to the table
@@ -120,7 +140,7 @@ class TwoOwners(ContractStrategy):
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-        'texto_9':'El saldo de US$ --- (--- con 00/100 dólares americanos), que será cancelado',
+        'texto_9': f'El saldo de US$ {conversion} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
         'texto_10': 'según el cronograma de pago indicado en el Numeral 10 del Anexo 5: Hoja Resumen', 
         'texto_11': '',
         'texto_12': '',
@@ -151,6 +171,20 @@ class TwoOwners(ContractStrategy):
         # Datos del lote
         'number_batch': request.number_batch or '',
         'approximate_area': request.approximate_area or '',
+                
+        'monto_venta': f"{float(request.monto_venta):,.2f}" if request.monto_venta else '',
+        'monto_letras': request.monto_letras or '',
+        'monto_reserva': f"{float(request.monto_reserva):,.2f}" if request.monto_reserva else '',
+        'reserva_letras': request.reserva_letras or '',
+        'saldo_restante': f"{float(request.saldo_restante):,.2f}" if request.saldo_restante else '',
+        'saldo_restante_letras': request.saldo_restante_letras or '',
+        'cuota_inicial': f"{float(request.cuota_inicial):,.2f}" if request.cuota_inicial else '',
+        'day_c': request.day_c or '',
+        'month_c': request.month_c or '',
+        'year_c': request.year_c or '',
+        'cuo_init_letras': request.cuo_init_letras or '',
+        'cantidad_anios': request.cantidad_anios or '',
+        'fecha_primera_cuota': request.fecha_primera_cuota or '',
         }
         
         document.render(valores)
@@ -169,7 +203,7 @@ class TwoOwners(ContractStrategy):
         # Leer datos del archivo Excel
         tabla_datos = TwoOwners.leer_datos_excel(ruta_excel)
         parametros = TwoOwners.getCampoEspecifico(ruta_excel)
-        TwoOwners.actualizar_documento_word(ruta_word, tabla_datos, parametros)
+        TwoOwners.actualizar_documento_word_excel(ruta_word, tabla_datos, parametros)
         
         
         return {"message": "Contrato financiado generado para dos propietarios."}
@@ -189,10 +223,11 @@ class TwoOwners(ContractStrategy):
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-        'texto_9':'El saldo de US$ --- (--- con 00/100 dólares americanos), que será cancelado',
+        'texto_9': f'El saldo de US$ {request.saldo_restante} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
+        # 'texto_9': f'El saldo de US$ {request.saldo_restante} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
         'texto_10':'',
         'texto_11': 'según lo siguiente:',
-        'texto_12': '(i)	La suma de US$ --- (--- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (ii)	La suma de US$ --- (--- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (iii)	(….)',
+        'texto_12': '(i)	La suma de US$ --- ( --- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (ii)	La suma de US$ --- (--- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (iii)	(….)',
         
         #day and month
         'day': request.day or '',
@@ -220,6 +255,13 @@ class TwoOwners(ContractStrategy):
         # Datos del lote
         'number_batch': request.number_batch or '',
         'approximate_area': request.approximate_area or '',
+        
+        'monto_venta': request.monto_venta or '',
+        'precio_letras': request.precio_letras or '',
+        'cuota_inicial': request.cuota_inicial or '',
+        'cuo_init_letras': request.cuo_init_letras or '',
+        'cantidad_anios': request.cantidad_anios or '',
+        'fecha_primera_cuota': request.fecha_primera_cuota or '',
         }
         
         document.render(valores)
@@ -312,28 +354,51 @@ class TwoOwners(ContractStrategy):
     def getCampoEspecifico(ruta_archivo):
         """
         Obtiene el valor de una celda específica de una hoja dada en el archivo Excel.
+        Convierte los valores numéricos y los formatea con coma para miles y dos decimales.
         """
+        def format_number(value):
+            try:
+                num = float(value)
+                return f"{num:,.2f}"  # Formatea con coma para miles y dos decimales
+            except (ValueError, TypeError):
+                return "0.00"
+
+        def format_percentage(value):
+            try:
+                num = float(value)
+                return f"{num:.2%}"  # Formatea como porcentaje con dos decimales
+            except (ValueError, TypeError):
+                return "0.00%"
+
         workbook = openpyxl.load_workbook(ruta_archivo, data_only=True)
-        
         hoja1 = workbook['Calculadora']
-        
+
         campos = {
-            "precio_venta" : hoja1['C1'].value,
-            "cuota_inicial" : hoja1['C2'].value,
-            "saldo_financiado" : hoja1['C3'].value,
-            "gasto_administrativo" : hoja1['C7'].value,
-            "precio_credito" : hoja1['C8'].value,
-            "tcea" : hoja1['H4'].value,
-            "numero_cuotas" : hoja1['H5'].value,
-            "cuota_mensual" : hoja1['C6'].value,
+            "precio_venta": format_number(hoja1['C1'].value),
+            "cuota_inicial": format_number(hoja1['C2'].value),
+            "saldo_financiado": format_number(hoja1['C3'].value),
+            "gasto_administrativo": format_number(hoja1['C7'].value),
+            "precio_credito": format_number(hoja1['C8'].value),
+            "tcea": format_percentage(hoja1['H4'].value),  # Convertido a porcentaje
+            "numero_cuotas": str(int(hoja1['H5'].value) if hoja1['H5'].value else "0"),  # Asegurar número entero
+            "cuota_mensual": format_number(hoja1['C6'].value),
         }
-        
+
         workbook.close()
-        print(campos)
+        
         return campos
-    
+
     @staticmethod
-    def actualizar_documento_word(ruta_archivo_word, tabla_datos, parametros):
+    def actualizar_documento_word(ruta_archivo_word, tabla_datos):
+        """
+        Actualiza el documento Word reemplazando el marcador '${cronograma}' con una tabla.
+        """
+        doc = Document(ruta_archivo_word)
+        TwoOwners.agregar_tabla_word(doc, tabla_datos)
+        doc.save(ruta_archivo_word)
+        
+    @staticmethod
+    def actualizar_documento_word_excel(ruta_archivo_word, tabla_datos, parametros):
         """
         Actualiza el documento Word reemplazando el marcador '${cronograma}' con una tabla.
         """
@@ -348,14 +413,14 @@ class TwoOwners(ContractStrategy):
         Reemplaza los marcadores en el documento Word con los valores extraídos del Excel.
         """
         valores = {
-            '${precio_venta}': str(parametros['precio_venta']),
-            '${cuota_inicial}': str(parametros['cuota_inicial']),
-            '${saldo_financiado}': str(parametros['saldo_financiado']),
-            '${gasto_administrativo}': str(parametros['gasto_administrativo']),
-            '${precio_credito}': str(parametros['precio_credito']),
-            '${tcea}': f"{parametros['tcea']:.2%}",  # Formateado como porcentaje
-            '${numero_cuotas}': str(parametros['numero_cuotas']),
-            '${cuota_mensual}': f"{parametros['cuota_mensual']:.2f}"
+        '${precio_venta}': parametros['precio_venta'],
+        '${cuota_armada}': parametros['cuota_inicial'],
+        '${saldo_financiado}': parametros['saldo_financiado'],
+        '${gasto_administrativo}': parametros['gasto_administrativo'],
+        '${precio_credito}': parametros['precio_credito'],
+        '${tcea}': parametros['tcea'],  
+        '${numero_cuotas}': parametros['numero_cuotas'],
+        '${cuota_mensual}': parametros['cuota_mensual']
         }
 
         # Reemplazar en párrafos
@@ -391,11 +456,12 @@ class TwoOwners(ContractStrategy):
                     for i, header in enumerate(encabezados):
                         hdr_cells[i].text = header
                         hdr_cells[i]._element.get_or_add_tcPr().append(
-                            parse_xml(r'<w:shd {} w:fill="CCFFCC"/>'.format(nsdecls('w')))
+                            parse_xml(r'<w:shd {} w:fill="D9D9D9"/>'.format(nsdecls('w')))
                         )
                         for p in hdr_cells[i].paragraphs:
                             for run in p.runs:
                                 run.font.size = Pt(8)
+                            p.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Centrar el texto
 
                     # Insertar filas de datos
                     for fila_datos in tabla_datos_hoja1:
@@ -403,13 +469,17 @@ class TwoOwners(ContractStrategy):
                         for i, valor in enumerate(fila_datos):
                             if i == 1 and isinstance(valor, datetime):  # Formato de fecha
                                 row_cells[i].text = valor.strftime('%d-%m-%Y')
-                            elif i >= 2:  # Formato de números con dos decimales
-                                row_cells[i].text = f"{valor:.2f}" if isinstance(valor, (int, float)) else ''
+                            elif i == 2 and isinstance(valor, (int, float)):  # Formato de Saldo Capital con coma de miles y 2 decimales
+                                row_cells[i].text = f"{valor:,.2f}"
+                            elif i >= 3 and isinstance(valor, (int, float)):  # Otras columnas numéricas con 2 decimales
+                                row_cells[i].text = f"{valor:,.2f}"
                             else:
                                 row_cells[i].text = str(valor) if valor is not None else ''
+                                # Aplicar tamaño de fuente y centrar
                             for p in row_cells[i].paragraphs:
                                 for run in p.runs:
                                     run.font.size = Pt(8)
+                                p.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Centrar el texto
 
                     # Aplicar bordes a la tabla
                     tbl_xml = tabla._tbl

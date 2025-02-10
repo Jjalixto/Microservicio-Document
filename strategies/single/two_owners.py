@@ -1,5 +1,8 @@
 from ..contract_strategy import ContractStrategy
 from models.document_request import DocumentRequest
+from services.lote_service import LoteService
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from services.lote_service import LoteService
 
 import xlwings as xw
 import openpyxl
@@ -44,11 +47,13 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def counted_type(request: DocumentRequest, document: Document):
         
+        yearBatch = LoteService.searchYearLote(request.number_batch)
+
         # Aquí se define el diccionario con los valores que se reemplazarán en el documento
         valores = {
             # Texto estático
-            'texto_4': 'La entrega de la posesión de el/los lote(s) se realizará en el mes de diciembre de 202x.',
-            'texto_5': 'La entrega de la posesión de las áreas y servicios comunes del Condominio se realizará en el mes de diciembre de 202x.',
+            'texto_4': yearBatch,
+            'texto_5': yearBatch,
             'texto_7': '',
             'texto_8': '',
             'texto_9': '',
@@ -80,6 +85,13 @@ class TwoOwners(ContractStrategy):
             # Datos del lote
             'number_batch': request.number_batch or '',
             'approximate_area': request.approximate_area or '',
+            
+            'monto_venta': request.monto_venta or '',
+            'precio_letras': request.precio_letras or '',
+            'cuota_inicial': request.cuota_inicial or '',
+            'cuo_init_letras': request.cuo_init_letras or '',
+            'cantidad_anios': request.cantidad_anios or '',
+            'fecha_primera_cuota': request.fecha_primera_cuota or '',
         }
         
         document.render(valores)
@@ -104,18 +116,20 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def financed_type(request: DocumentRequest, document: Document):
         
+        yearBatch = LoteService.searchYearLote(request.number_batch)
+        
         valores = {
 
         #financed according to the table
         # 'texto_1':'Anexo Nº 5: Hoja Resumen',
         # 'texto_2':'El Comprador declara conocer que las indicadas son cuentas recaudadoras razón por la que ante el incumplimiento de pago en la fecha correspondiente incurrirá en mora automática sin necesidad de intimación previa; en consecuencia, se devengará un interés compensatorio diario de US$ 1.00 (Un y 00/100 dólares americanos), y un interés moratorio diario igual, ambos respecto del importe de la cuota adeudada, los cuales se cobrarán conjuntamente con la cuota pendiente de pago. El Comprador reconoce que los pagos deben efectuarse, obligatoriamente, a través de dicha cuenta recaudadora, considerándose esta como una obligación contractual <br> Sin perjuicio de ello, El Comprador declara conocer que, supletoriamente al sistema de recaudación mencionado, podrá realizar el pago de las cuotas mediante el acceso a un enlace de pago generado por la Vendedora y/o sistema de recaudación propuesto por la Vendedora; el mismo que también generará una mora automática compuesta por un interés compensatorio diario y un interés moratorio diario del mismo valor señalado en el párrafo anterior, siempre que incumple con el pago de la cuota en la fecha correspondiente. Las partes declaran que esta forma de pago también se considerara una obligación contractual y generará los efectos cancelatorios correspondientes. <br> Finalmente, el Comprador deberá informar y enviar a la Vendedora, los sustentos de pagos respectivos.',
         # 'texto_3':'Adicionalmente, las partes dejan constancia que, al amparo de lo dispuesto por el artículo 1583 del Código Civil, la Vendedora se reserva la propiedad de el/los lote(s) hasta la cancelación total del Precio de Venta.',
-        'texto_4':'La entrega de la posesión de el/los lote(s) se realizará en el mes de diciembre de 202x.',
-        'texto_5':'La entrega de la posesión de las áreas y servicios comunes del Condominio se realizará en el mes de diciembre de 202x.',
+        'texto_4': yearBatch,
+        'texto_5': yearBatch,
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-        'texto_9':'El saldo de US$ --- (--- con 00/100 dólares americanos), que será cancelado',
+        'texto_9': f'El saldo de US$ {request.saldo_restante} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
         'texto_10': 'según el cronograma de pago indicado en el Numeral 10 del Anexo 5: Hoja Resumen', 
         'texto_11': '',
         'texto_12': '',
@@ -143,9 +157,16 @@ class TwoOwners(ContractStrategy):
         'mail_2': request.mail_2 or '',
         'phone_2': request.phone_2 or '',
 
-        # Datos del lote
+        #Datos del lote
         'number_batch': request.number_batch or '',
         'approximate_area': request.approximate_area or '',
+        
+        'monto_venta': request.monto_venta or '',
+        'precio_letras': request.precio_letras or '',
+        'cuota_inicial': request.cuota_inicial or '',
+        'cuo_init_letras': request.cuo_init_letras or '',
+        'cantidad_anios': request.cantidad_anios or '',
+        'fecha_primera_cuota': request.fecha_primera_cuota or '',
         }
         
         document.render(valores)
@@ -163,26 +184,28 @@ class TwoOwners(ContractStrategy):
         
         # Leer datos del archivo Excel
         tabla_datos = TwoOwners.leer_datos_excel(ruta_excel)
-        TwoOwners.actualizar_documento_word(ruta_word, tabla_datos)
+        TwoOwners.actualizar_documento_word_excel(ruta_word, tabla_datos)
         
         return {"message": "Contrato financiado generado para dos propietarios."}
     
     @staticmethod
     def fractionated_type(request: DocumentRequest, document: Document):
+        
+        yearBatch = LoteService.searchYearLote(request.number_batch)
+        
         valores = {
-
         #financed according to the table
         # 'texto_2':'El Comprador declara conocer que las indicadas son cuentas recaudadoras razón por la que ante el incumplimiento de pago en la fecha correspondiente incurrirá en mora automática sin necesidad de intimación previa; en consecuencia, se devengará un interés compensatorio diario de US$ 1.00 (Un y 00/100 dólares americanos), y un interés moratorio diario igual, ambos respecto del importe de la cuota adeudada, los cuales se cobrarán conjuntamente con la cuota pendiente de pago. El Comprador reconoce que los pagos deben efectuarse, obligatoriamente, a través de dicha cuenta recaudadora, considerándose esta como una obligación contractual <br> Sin perjuicio de ello, El Comprador declara conocer que, supletoriamente al sistema de recaudación mencionado, podrá realizar el pago de las cuotas mediante el acceso a un enlace de pago generado por la Vendedora y/o sistema de recaudación propuesto por la Vendedora; el mismo que también generará una mora automática compuesta por un interés compensatorio diario y un interés moratorio diario del mismo valor señalado en el párrafo anterior, siempre que incumple con el pago de la cuota en la fecha correspondiente. Las partes declaran que esta forma de pago también se considerara una obligación contractual y generará los efectos cancelatorios correspondientes. <br> Finalmente, el Comprador deberá informar y enviar a la Vendedora, los sustentos de pagos respectivos.',
         # 'texto_3':'Adicionalmente, las partes dejan constancia que, al amparo de lo dispuesto por el artículo 1583 del Código Civil, la Vendedora se reserva la propiedad de el/los lote(s) hasta la cancelación total del Precio de Venta.',
-        'texto_4':'La entrega de la posesión de el/los lote(s) se realizará en el mes de diciembre de 202x.',
-        'texto_5':'La entrega de la posesión de las áreas y servicios comunes del Condominio se realizará en el mes de diciembre de 202x.',
+        'texto_4': yearBatch,
+        'texto_5': yearBatch,
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-        'texto_9':'El saldo de US$ --- (--- con 00/100 dólares americanos), que será cancelado',
+        'texto_9':f'El saldo de US$ {request.saldo_restante} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
         'texto_10':'',
         'texto_11': 'según lo siguiente:',
-        'texto_12': '(i)	La suma de US$ --- (--- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (ii)	La suma de US$ --- (--- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (iii)	(….)',
+        'texto_12': '(i)	La suma de US$ --- ( --- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (ii)	La suma de US$ --- (--- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (iii)	(….)',
         
         #day and month
         'day': request.day or '',
@@ -210,6 +233,13 @@ class TwoOwners(ContractStrategy):
         # Datos del lote
         'number_batch': request.number_batch or '',
         'approximate_area': request.approximate_area or '',
+        
+        'monto_venta': request.monto_venta or '',
+        'precio_letras': request.precio_letras or '',
+        'cuota_inicial': request.cuota_inicial or '',
+        'cuo_init_letras': request.cuo_init_letras or '',
+        'cantidad_anios': request.cantidad_anios or '',
+        'fecha_primera_cuota': request.fecha_primera_cuota or '',
         }
         
         document.render(valores)
@@ -270,6 +300,16 @@ class TwoOwners(ContractStrategy):
         doc.save(ruta_archivo_word)
     
     @staticmethod
+    def actualizar_documento_word_excel(ruta_archivo_word, tabla_datos, parametros):
+        """
+        Actualiza el documento Word reemplazando el marcador '${cronograma}' con una tabla.
+        """
+        doc = Document(ruta_archivo_word)
+        TwoOwners.reemplazar_campos_especificos(doc, parametros)
+        TwoOwners.agregar_tabla_word(doc, tabla_datos)
+        doc.save(ruta_archivo_word)
+    
+    @staticmethod
     def agregar_tabla_word(doc,tabla_datos_hoja1):
         
     # Buscar y reemplazar `${cronograma}` con la tabla en su lugar
@@ -288,25 +328,30 @@ class TwoOwners(ContractStrategy):
                     for i, header in enumerate(encabezados):
                         hdr_cells[i].text = header
                         hdr_cells[i]._element.get_or_add_tcPr().append(
-                            parse_xml(r'<w:shd {} w:fill="CCFFCC"/>'.format(nsdecls('w')))
+                            parse_xml(r'<w:shd {} w:fill="D9D9D9"/>'.format(nsdecls('w')))
                         )
                         for p in hdr_cells[i].paragraphs:
                             for run in p.runs:
                                 run.font.size = Pt(8)
+                            p.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Centrar el texto
 
                     # Insertar filas de datos
                     for fila_datos in tabla_datos_hoja1:
                         row_cells = tabla.add_row().cells
                         for i, valor in enumerate(fila_datos):
                             if i == 1 and isinstance(valor, datetime):  # Formato de fecha
-                                row_cells[i].text = valor.strftime('%Y-%m-%d')
-                            elif i >= 2:  # Formato de números con dos decimales
-                                row_cells[i].text = f"{valor:.2f}" if isinstance(valor, (int, float)) else ''
+                                row_cells[i].text = valor.strftime('%d-%m-%Y')
+                            elif i == 2 and isinstance(valor, (int, float)):  # Formato de Saldo Capital con coma de miles y 2 decimales
+                                row_cells[i].text = f"{valor:,.2f}"
+                            elif i >= 3 and isinstance(valor, (int, float)):  # Otras columnas numéricas con 2 decimales
+                                row_cells[i].text = f"{valor:,.2f}"
                             else:
                                 row_cells[i].text = str(valor) if valor is not None else ''
+                                # Aplicar tamaño de fuente y centrar
                             for p in row_cells[i].paragraphs:
                                 for run in p.runs:
                                     run.font.size = Pt(8)
+                                p.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Centrar el texto
 
                     # Aplicar bordes a la tabla
                     tbl_xml = tabla._tbl
@@ -355,6 +400,36 @@ class TwoOwners(ContractStrategy):
                 if marcador in paragraph.text:  # Verifica si el marcador está en el párrafo
                     # Reemplaza el marcador con el texto proporcionado
                     paragraph.text = paragraph.text.replace(marcador, reemplazo)
+    
+    @staticmethod
+    def reemplazar_campos_especificos(doc, parametros):
+        """
+        Reemplaza los marcadores en el documento Word con los valores extraídos del Excel.
+        """
+        valores = {
+        '${precio_venta}': parametros['precio_venta'],
+        '${cuota_armada}': parametros['cuota_inicial'],
+        '${saldo_financiado}': parametros['saldo_financiado'],
+        '${gasto_administrativo}': parametros['gasto_administrativo'],
+        '${precio_credito}': parametros['precio_credito'],
+        '${tcea}': parametros['tcea'],  
+        '${numero_cuotas}': parametros['numero_cuotas'],
+        '${cuota_mensual}': parametros['cuota_mensual']
+        }
+
+        # Reemplazar en párrafos
+        for parrafo in doc.paragraphs:
+            for key, value in valores.items():
+                if key in parrafo.text:
+                    parrafo.text = parrafo.text.replace(key, value)
+
+        # Reemplazar en tablas (por si los valores están en celdas)
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for key, value in valores.items():
+                        if key in cell.text:
+                            cell.text = cell.text.replace(key, value)
     
     # Función para reemplazar los marcadores con los valores correspondientes en el documento
     @staticmethod

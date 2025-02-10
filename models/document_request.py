@@ -39,9 +39,18 @@ class DocumentRequest(BaseModel):
     
     #Datos para el excel
     monto_venta: Optional[str] = ''
+    monto_letras: Optional[str] = ''
+    monto_reserva: Optional[str] = ''
+    reserva_letras: Optional[str] = ''
     cuota_inicial: Optional[str] = ''
+    cuo_init_letras: Optional[str] = ''
     cantidad_anios: Optional[str] = ''
     fecha_primera_cuota: Optional[str] = ''
+    saldo_restante: Optional[str] = ''
+    saldo_restante_letras: Optional[str] = ''
+    day_c: Optional[str] = ''
+    month_c: Optional[str] = ''
+    year_c: Optional[str] = ''
     
     #Datos para cuadros word
     precio_letras: Optional[str] = ''
