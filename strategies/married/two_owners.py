@@ -55,7 +55,7 @@ class TwoOwners(ContractStrategy):
             'texto_5': yearBatch,
             'texto_7': '',
             'texto_8': '',
-            'texto_8.1':'',
+            'vin':'',
             'texto_9': '',
             'texto_10':'',
             'texto_11':'',
@@ -126,8 +126,6 @@ class TwoOwners(ContractStrategy):
     def financed_type(request: DocumentRequest, document: Document):
         
         yearBatch = LoteService.searchYearLote(request.number_batch)
-
-        conversion = f"{float(request.saldo_restante):,.2f}" if request.saldo_restante else '',
             
         valores = {
 
@@ -140,7 +138,8 @@ class TwoOwners(ContractStrategy):
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-        'texto_9': f'El saldo de US$ {conversion} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
+        'vin': 'c.',
+        'texto_9': f"El saldo de US$ {float(request.saldo_restante):,.2f} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado",
         'texto_10': 'según el cronograma de pago indicado en el Numeral 10 del Anexo 5: Hoja Resumen', 
         'texto_11': '',
         'texto_12': '',
@@ -186,7 +185,7 @@ class TwoOwners(ContractStrategy):
         'cantidad_anios': request.cantidad_anios or '',
         'fecha_primera_cuota': request.fecha_primera_cuota or '',
         }
-        
+
         document.render(valores)
         
         TwoOwners.insertar_texto_estatico(document)
@@ -215,15 +214,12 @@ class TwoOwners(ContractStrategy):
         
         valores = {
 
-        #financed according to the table
-        # 'texto_2':'El Comprador declara conocer que las indicadas son cuentas recaudadoras razón por la que ante el incumplimiento de pago en la fecha correspondiente incurrirá en mora automática sin necesidad de intimación previa; en consecuencia, se devengará un interés compensatorio diario de US$ 1.00 (Un y 00/100 dólares americanos), y un interés moratorio diario igual, ambos respecto del importe de la cuota adeudada, los cuales se cobrarán conjuntamente con la cuota pendiente de pago. El Comprador reconoce que los pagos deben efectuarse, obligatoriamente, a través de dicha cuenta recaudadora, considerándose esta como una obligación contractual <br> Sin perjuicio de ello, El Comprador declara conocer que, supletoriamente al sistema de recaudación mencionado, podrá realizar el pago de las cuotas mediante el acceso a un enlace de pago generado por la Vendedora y/o sistema de recaudación propuesto por la Vendedora; el mismo que también generará una mora automática compuesta por un interés compensatorio diario y un interés moratorio diario del mismo valor señalado en el párrafo anterior, siempre que incumple con el pago de la cuota en la fecha correspondiente. Las partes declaran que esta forma de pago también se considerara una obligación contractual y generará los efectos cancelatorios correspondientes. <br> Finalmente, el Comprador deberá informar y enviar a la Vendedora, los sustentos de pagos respectivos.',
-        # 'texto_3':'Adicionalmente, las partes dejan constancia que, al amparo de lo dispuesto por el artículo 1583 del Código Civil, la Vendedora se reserva la propiedad de el/los lote(s) hasta la cancelación total del Precio de Venta.',
         'texto_4': yearBatch,
         'texto_5': yearBatch,
-        # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-        'texto_9': f'El saldo de US$ {request.saldo_restante} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
+        'vin': 'c.',
+        'texto_9': f'El saldo de US$ {float(request.saldo_restante):,.2f} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
         # 'texto_9': f'El saldo de US$ {request.saldo_restante} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
         'texto_10':'',
         'texto_11': 'según lo siguiente:',
@@ -255,10 +251,17 @@ class TwoOwners(ContractStrategy):
         # Datos del lote
         'number_batch': request.number_batch or '',
         'approximate_area': request.approximate_area or '',
-        
-        'monto_venta': request.monto_venta or '',
-        'precio_letras': request.precio_letras or '',
-        'cuota_inicial': request.cuota_inicial or '',
+                
+        'monto_venta': f"{float(request.monto_venta):,.2f}" if request.monto_venta else '',
+        'monto_letras': request.monto_letras or '',
+        'monto_reserva': f"{float(request.monto_reserva):,.2f}" if request.monto_reserva else '',
+        'reserva_letras': request.reserva_letras or '',
+        'saldo_restante': f"{float(request.saldo_restante):,.2f}" if request.saldo_restante else '',
+        'saldo_restante_letras': request.saldo_restante_letras or '',
+        'cuota_inicial': f"{float(request.cuota_inicial):,.2f}" if request.cuota_inicial else '',
+        'day_c': request.day_c or '',
+        'month_c': request.month_c or '',
+        'year_c': request.year_c or '',
         'cuo_init_letras': request.cuo_init_letras or '',
         'cantidad_anios': request.cantidad_anios or '',
         'fecha_primera_cuota': request.fecha_primera_cuota or '',
@@ -502,7 +505,7 @@ class TwoOwners(ContractStrategy):
     def insertar_texto_estatico(document):
         valores= {
         '${texto_1}':'Anexo Nº 5: Hoja Resumen',
-        '${texto_2}':'El Comprador declara conocer que las indicadas son cuentas recaudadoras razón por la que ante el incumplimiento de pago en la fecha correspondiente incurrirá en mora automática sin necesidad de intimación previa; en consecuencia, se devengará un interés compensatorio diario de US$ 1.00 (Un y 00/100 dólares americanos), y un interés moratorio diario igual, ambos respecto del importe de la cuota adeudada, los cuales se cobrarán conjuntamente con la cuota pendiente de pago. El Comprador reconoce que los pagos deben efectuarse, obligatoriamente, a través de dicha cuenta recaudadora, considerándose esta como una obligación contractual <br> Sin perjuicio de ello, El Comprador declara conocer que, supletoriamente al sistema de recaudación mencionado, podrá realizar el pago de las cuotas mediante el acceso a un enlace de pago generado por la Vendedora y/o sistema de recaudación propuesto por la Vendedora; el mismo que también generará una mora automática compuesta por un interés compensatorio diario y un interés moratorio diario del mismo valor señalado en el párrafo anterior, siempre que incumple con el pago de la cuota en la fecha correspondiente. Las partes declaran que esta forma de pago también se considerara una obligación contractual y generará los efectos cancelatorios correspondientes. <br> Finalmente, el Comprador deberá informar y enviar a la Vendedora, los sustentos de pagos respectivos.',
+        '${texto_2}':'El Comprador declara conocer que las indicadas son cuentas recaudadoras razón por la que ante el incumplimiento de pago en la fecha correspondiente incurrirá en mora automática sin necesidad de intimación previa; en consecuencia, se devengará un interés compensatorio diario de US$ 1.00 (Un y 00/100 dólares americanos), y un interés moratorio diario igual, ambos respecto del importe de la cuota adeudada, los cuales se cobrarán conjuntamente con la cuota pendiente de pago. El Comprador reconoce que los pagos deben efectuarse, obligatoriamente, a través de dicha cuenta recaudadora, considerándose esta como una obligación contractual.\n\nSin perjuicio de ello, El Comprador declara conocer que, supletoriamente al sistema de recaudación mencionado, podrá realizar el pago de las cuotas mediante el acceso a un enlace de pago generado por la Vendedora y/o sistema de recaudación propuesto por la Vendedora; el mismo que también generará una mora automática compuesta por un interés compensatorio diario y un interés moratorio diario del mismo valor señalado en el párrafo anterior, siempre que incumple con el pago de la cuota en la fecha correspondiente. Las partes declaran que esta forma de pago también se considerara una obligación contractual y generará los efectos cancelatorios correspondientes.\n\nFinalmente, el Comprador deberá informar y enviar a la Vendedora, los sustentos de pagos respectivos.',
         '${texto_3}':'Adicionalmente, las partes dejan constancia que, al amparo de lo dispuesto por el artículo 1583 del Código Civil, la Vendedora se reserva la propiedad de el/los lote(s) hasta la cancelación total del Precio de Venta.',
         '${texto_6}':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         }
@@ -517,7 +520,7 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def insertar_texto_estatico_fractionated(document):
         valores_estaticos = {
-        '${texto_2}':'El Comprador declara conocer que las indicadas son cuentas recaudadoras razón por la que ante el incumplimiento de pago en la fecha correspondiente incurrirá en mora automática sin necesidad de intimación previa; en consecuencia, se devengará un interés compensatorio diario de US$ 1.00 (Un y 00/100 dólares americanos), y un interés moratorio diario igual, ambos respecto del importe de la cuota adeudada, los cuales se cobrarán conjuntamente con la cuota pendiente de pago. El Comprador reconoce que los pagos deben efectuarse, obligatoriamente, a través de dicha cuenta recaudadora, considerándose esta como una obligación contractual <br> Sin perjuicio de ello, El Comprador declara conocer que, supletoriamente al sistema de recaudación mencionado, podrá realizar el pago de las cuotas mediante el acceso a un enlace de pago generado por la Vendedora y/o sistema de recaudación propuesto por la Vendedora; el mismo que también generará una mora automática compuesta por un interés compensatorio diario y un interés moratorio diario del mismo valor señalado en el párrafo anterior, siempre que incumple con el pago de la cuota en la fecha correspondiente. Las partes declaran que esta forma de pago también se considerara una obligación contractual y generará los efectos cancelatorios correspondientes. <br> Finalmente, el Comprador deberá informar y enviar a la Vendedora, los sustentos de pagos respectivos.',
+        '${texto_2}':'El Comprador declara conocer que las indicadas son cuentas recaudadoras razón por la que ante el incumplimiento de pago en la fecha correspondiente incurrirá en mora automática sin necesidad de intimación previa; en consecuencia, se devengará un interés compensatorio diario de US$ 1.00 (Un y 00/100 dólares americanos), y un interés moratorio diario igual, ambos respecto del importe de la cuota adeudada, los cuales se cobrarán conjuntamente con la cuota pendiente de pago. El Comprador reconoce que los pagos deben efectuarse, obligatoriamente, a través de dicha cuenta recaudadora, considerándose esta como una obligación contractual \n Sin perjuicio de ello, El Comprador declara conocer que, supletoriamente al sistema de recaudación mencionado, podrá realizar el pago de las cuotas mediante el acceso a un enlace de pago generado por la Vendedora y/o sistema de recaudación propuesto por la Vendedora; el mismo que también generará una mora automática compuesta por un interés compensatorio diario y un interés moratorio diario del mismo valor señalado en el párrafo anterior, siempre que incumple con el pago de la cuota en la fecha correspondiente. Las partes declaran que esta forma de pago también se considerara una obligación contractual y generará los efectos cancelatorios correspondientes. \n Finalmente, el Comprador deberá informar y enviar a la Vendedora, los sustentos de pagos respectivos.',
         '${texto_3}':'Adicionalmente, las partes dejan constancia que, al amparo de lo dispuesto por el artículo 1583 del Código Civil, la Vendedora se reserva la propiedad de el/los lote(s) hasta la cancelación total del Precio de Venta.',
         '${texto_6}':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         }

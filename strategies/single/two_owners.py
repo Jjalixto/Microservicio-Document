@@ -56,9 +56,11 @@ class TwoOwners(ContractStrategy):
             'texto_5': yearBatch,
             'texto_7': '',
             'texto_8': '',
-            'texto_9': '',
-            'texto_10': 'Según el cronograma de pago indicado en el Numeral 10 del Anexo 5: Hoja Resumen',
-
+            'vin': '',
+            'texto_10': '',
+            'texto_11': '',
+            'texto_12': '',
+            
             # Fecha
             'day': request.day or '',
             'month': request.month or '',
@@ -86,9 +88,16 @@ class TwoOwners(ContractStrategy):
             'number_batch': request.number_batch or '',
             'approximate_area': request.approximate_area or '',
             
-            'monto_venta': request.monto_venta or '',
-            'precio_letras': request.precio_letras or '',
-            'cuota_inicial': request.cuota_inicial or '',
+            'monto_venta': f"{float(request.monto_venta):,.2f}" if request.monto_venta else '',
+            'monto_letras': request.monto_letras or '',
+            'monto_reserva': f"{float(request.monto_reserva):,.2f}" if request.monto_reserva else '',
+            'reserva_letras': request.reserva_letras or '',
+            'saldo_restante': f"{float(request.saldo_restante):,.2f}" if request.saldo_restante else '',
+            'saldo_restante_letras': request.saldo_restante_letras or '',
+            'cuota_inicial': f"{float(request.cuota_inicial):,.2f}" if request.cuota_inicial else '',
+            'day_c': request.day_c or '',
+            'month_c': request.month_c or '',
+            'year_c': request.year_c or '',
             'cuo_init_letras': request.cuo_init_letras or '',
             'cantidad_anios': request.cantidad_anios or '',
             'fecha_primera_cuota': request.fecha_primera_cuota or '',
@@ -129,7 +138,8 @@ class TwoOwners(ContractStrategy):
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-        'texto_9': f'El saldo de US$ {request.saldo_restante} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
+        'vin': 'c.',
+        'texto_9': f'El saldo de US$ {float(request.saldo_restante):,.2f} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
         'texto_10': 'según el cronograma de pago indicado en el Numeral 10 del Anexo 5: Hoja Resumen', 
         'texto_11': '',
         'texto_12': '',
@@ -157,13 +167,20 @@ class TwoOwners(ContractStrategy):
         'mail_2': request.mail_2 or '',
         'phone_2': request.phone_2 or '',
 
-        #Datos del lote
+        # Datos del lote
         'number_batch': request.number_batch or '',
         'approximate_area': request.approximate_area or '',
         
-        'monto_venta': request.monto_venta or '',
-        'precio_letras': request.precio_letras or '',
-        'cuota_inicial': request.cuota_inicial or '',
+        'monto_venta': f"{float(request.monto_venta):,.2f}" if request.monto_venta else '',
+        'monto_letras': request.monto_letras or '',
+        'monto_reserva': f"{float(request.monto_reserva):,.2f}" if request.monto_reserva else '',
+        'reserva_letras': request.reserva_letras or '',
+        'saldo_restante': f"{float(request.saldo_restante):,.2f}" if request.saldo_restante else '',
+        'saldo_restante_letras': request.saldo_restante_letras or '',
+        'cuota_inicial': f"{float(request.cuota_inicial):,.2f}" if request.cuota_inicial else '',
+        'day_c': request.day_c or '',
+        'month_c': request.month_c or '',
+        'year_c': request.year_c or '',
         'cuo_init_letras': request.cuo_init_letras or '',
         'cantidad_anios': request.cantidad_anios or '',
         'fecha_primera_cuota': request.fecha_primera_cuota or '',
@@ -202,7 +219,8 @@ class TwoOwners(ContractStrategy):
         # 'texto_6':'La Vendedora podrá reportar a las centrales de riesgo a El Comprador en caso de incumplimiento en el pago de sus cuotas.',
         'texto_7':'(a) dos o más armadas alternas o consecutivas (cuotas) del Precio de Venta adeudado bajo el presente Contrato señaladas en el Cronograma de Pagos indicado en el Numeral 10 del Anexo N.° 5: Hoja Resumen; y/o (b)',
         'texto_8':'Así, en caso el Comprador mantenga algún reclamo que esté siendo materia de controversia no podrá suspender el pago de las cuotas del financiamiento que mantenga pendientes en atención al lote adquirido ni podrá suspender las demás obligaciones que haya contraído, salvo que cuente con una orden judicial o arbitral que así lo determine.',
-        'texto_9':f'El saldo de US$ {request.saldo_restante} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
+        'vin': 'c.',
+        'texto_9':f'El saldo de US$ {float(request.saldo_restante):,.2f} ({request.saldo_restante_letras} con 00/100 dólares americanos), que será cancelado',
         'texto_10':'',
         'texto_11': 'según lo siguiente:',
         'texto_12': '(i)	La suma de US$ --- ( --- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (ii)	La suma de US$ --- (--- con 00/100 dólares americanos), a más tardar el – de – de 202-. \n (iii)	(….)',
@@ -240,6 +258,11 @@ class TwoOwners(ContractStrategy):
         'cuo_init_letras': request.cuo_init_letras or '',
         'cantidad_anios': request.cantidad_anios or '',
         'fecha_primera_cuota': request.fecha_primera_cuota or '',
+        
+        'precio_mitad_1': f"{float(request.precio_mitad_1):,.2f}",
+        'precio_mitad_letras_1': request.precio_mitad_letras_1 or '',
+        'precio_mitad_2': f"{float(request.precio_mitad_2):,.2f}",
+        "precio_mitad_letras_2": request.precio_mitad_letras_2 or '',
         }
         
         document.render(valores)

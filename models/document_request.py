@@ -55,3 +55,8 @@ class DocumentRequest(BaseModel):
     #Datos para cuadros word
     precio_letras: Optional[str] = ''
     cuota_inicial_letras: Optional[str] = ''
+    
+    precio_mitad_1: Optional[str] = ''
+    precio_mitad_letras_1: Optional[str] = ''
+    precio_mitad_2: Optional[str] = ''
+    precio_mitad_letras_2: Optional[str] = ''
