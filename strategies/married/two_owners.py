@@ -109,7 +109,7 @@ class TwoOwners(ContractStrategy):
         TwoOwners.eliminar_parrafos_innecesarios(document)
         TwoOwners.eliminar_desde_marcador(document, '${eliminar}')
         
-        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+        output_folder = "/app/contratos"
 
         ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
         
@@ -190,7 +190,7 @@ class TwoOwners(ContractStrategy):
         TwoOwners.reemplazar_marcadores(document, valores)
         TwoOwners.dejar_el_marcador(document)
         
-        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+        output_folder = "/app/contratos"
         
         ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
 
@@ -282,7 +282,7 @@ class TwoOwners(ContractStrategy):
         TwoOwners.eliminar_parrafos_innecesarios_fractioned(document)
         TwoOwners.eliminar_desde_marcador(document, '${eliminar}')    
         
-        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+        output_folder = "/app/contratos"
 
         ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
         

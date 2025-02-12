@@ -110,7 +110,7 @@ class OneOwner(ContractStrategy):
         OneOwner.eliminar_parrafos_innecesarios(document)
         OneOwner.eliminar_desde_marcador(document, '${eliminar}')
         
-        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+        output_folder = "/app/contratos"
 
         ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
         
@@ -190,7 +190,7 @@ class OneOwner(ContractStrategy):
         OneOwner.reemplazar_marcadores(document, valores)
         OneOwner.dejar_el_marcador(document)
         
-        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+        output_folder = "/app/contratos"
         
         ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
         
@@ -279,7 +279,7 @@ class OneOwner(ContractStrategy):
         OneOwner.eliminar_parrafos_innecesarios_fractioned(document)
         OneOwner.eliminar_desde_marcador(document, '${eliminar}')    
         
-        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+        output_folder = "/app/contratos"
         
         ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
 
