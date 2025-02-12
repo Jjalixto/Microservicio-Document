@@ -6,7 +6,6 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 import xlwings as xw
 import openpyxl
 import os
-from models.document_request import DocumentRequest
 from docx import Document
 from docxtpl import DocxTemplate
 from datetime import datetime
@@ -100,7 +99,7 @@ class TwoOwners(ContractStrategy):
             'year_c': request.year_c or '',
             'cuo_init_letras': request.cuo_init_letras or '',
             'cantidad_anios': request.cantidad_anios or '',
-            'fecha_primera_cuota': request.fecha_primera_cuota or '',
+            # 'fecha_primera_cuota': request.fecha_primera_cuota or '',
         }
         
         document.render(valores)
@@ -110,15 +109,8 @@ class TwoOwners(ContractStrategy):
         TwoOwners.eliminar_desde_marcador(document, '${eliminar}')
         
         ruta_word = './documento_contado_final.docx'
-        ruta_excel='lib/calculadora.xlsx'
         
         document.save(ruta_word)
-        
-        TwoOwners.actualizar_excel(ruta_excel, request)
-        
-        # Leer datos del archivo Excel
-        tabla_datos = TwoOwners.leer_datos_excel(ruta_excel)
-        TwoOwners.actualizar_documento_word(ruta_word, tabla_datos)
         
         return {"message": "Contrato al contado generado para dos propietarios."}
     

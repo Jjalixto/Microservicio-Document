@@ -7,7 +7,6 @@ from services.lote_service import LoteService
 import xlwings as xw
 import openpyxl
 
-from models.document_request import DocumentRequest
 from docx import Document
 from docxtpl import DocxTemplate
 from datetime import datetime
@@ -22,7 +21,7 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def process_request(request: DocumentRequest):
         #Carga del documento
-        document = DocxTemplate('lib/Contract-Single-Two.docx')
+        document = DocxTemplate('lib/nuevo.docx')
         condicion = TwoOwners.validacion_condicion(request, document)
         
         return condicion
@@ -184,6 +183,11 @@ class TwoOwners(ContractStrategy):
         'cuo_init_letras': request.cuo_init_letras or '',
         'cantidad_anios': request.cantidad_anios or '',
         'fecha_primera_cuota': request.fecha_primera_cuota or '',
+        
+        'precio_mitad_1': f"{float(request.precio_mitad_1):,.2f}",
+        'precio_mitad_letras_1': request.precio_mitad_letras_1 or '',
+        'precio_mitad_2': f"{float(request.precio_mitad_2):,.2f}",
+        "precio_mitad_letras_2": request.precio_mitad_letras_2 or '',
         }
         
         document.render(valores)
@@ -201,7 +205,8 @@ class TwoOwners(ContractStrategy):
         
         # Leer datos del archivo Excel
         tabla_datos = TwoOwners.leer_datos_excel(ruta_excel)
-        TwoOwners.actualizar_documento_word_excel(ruta_word, tabla_datos)
+        parametros = TwoOwners.getCampoEspecifico(ruta_excel)
+        TwoOwners.actualizar_documento_word_excel(ruta_word, tabla_datos, parametros)
         
         return {"message": "Contrato financiado generado para dos propietarios."}
     
@@ -293,6 +298,44 @@ class TwoOwners(ContractStrategy):
             app.quit()
     
     @staticmethod
+    def getCampoEspecifico(ruta_archivo):
+        """
+        Obtiene el valor de una celda específica de una hoja dada en el archivo Excel.
+        Convierte los valores numéricos y los formatea con coma para miles y dos decimales.
+        """
+        def format_number(value):
+            try:
+                num = float(value)
+                return f"{num:,.2f}"  # Formatea con coma para miles y dos decimales
+            except (ValueError, TypeError):
+                return "0.00"
+
+        def format_percentage(value):
+            try:
+                num = float(value)
+                return f"{num:.2%}"  # Formatea como porcentaje con dos decimales
+            except (ValueError, TypeError):
+                return "0.00%"
+
+        workbook = openpyxl.load_workbook(ruta_archivo, data_only=True)
+        hoja1 = workbook['Calculadora']
+
+        campos = {
+            "precio_venta": format_number(hoja1['C1'].value),
+            "cuota_inicial": format_number(hoja1['C2'].value),
+            "saldo_financiado": format_number(hoja1['C3'].value),
+            "gasto_administrativo": format_number(hoja1['C7'].value),
+            "precio_credito": format_number(hoja1['C8'].value),
+            "tcea": format_percentage(hoja1['H4'].value),  # Convertido a porcentaje
+            "numero_cuotas": str(int(hoja1['H5'].value) if hoja1['H5'].value else "0"),  # Asegurar número entero
+            "cuota_mensual": format_number(hoja1['C6'].value),
+        }
+
+        workbook.close()
+        
+        return campos
+    
+    @staticmethod
     def leer_datos_excel(ruta_archivo):
         """
         Lee los datos calculados del archivo Excel desde la hoja 'Calculadora'.
@@ -331,6 +374,46 @@ class TwoOwners(ContractStrategy):
         TwoOwners.reemplazar_campos_especificos(doc, parametros)
         TwoOwners.agregar_tabla_word(doc, tabla_datos)
         doc.save(ruta_archivo_word)
+    
+    @staticmethod
+    def actualizar_documento_word_excel(ruta_archivo_word, tabla_datos, parametros):
+        """
+        Actualiza el documento Word reemplazando el marcador '${cronograma}' con una tabla.
+        """
+        doc = Document(ruta_archivo_word)
+        TwoOwners.reemplazar_campos_especificos(doc, parametros)
+        TwoOwners.agregar_tabla_word(doc, tabla_datos)
+        doc.save(ruta_archivo_word)
+    
+    @staticmethod
+    def reemplazar_campos_especificos(doc, parametros):
+        """
+        Reemplaza los marcadores en el documento Word con los valores extraídos del Excel.
+        """
+        valores = {
+        '${precio_venta}': parametros['precio_venta'],
+        '${cuota_armada}': parametros['cuota_inicial'],
+        '${saldo_financiado}': parametros['saldo_financiado'],
+        '${gasto_administrativo}': parametros['gasto_administrativo'],
+        '${precio_credito}': parametros['precio_credito'],
+        '${tcea}': parametros['tcea'],  
+        '${numero_cuotas}': parametros['numero_cuotas'],
+        '${cuota_mensual}': parametros['cuota_mensual']
+        }
+
+        # Reemplazar en párrafos
+        for parrafo in doc.paragraphs:
+            for key, value in valores.items():
+                if key in parrafo.text:
+                    parrafo.text = parrafo.text.replace(key, value)
+
+        # Reemplazar en tablas (por si los valores están en celdas)
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for key, value in valores.items():
+                        if key in cell.text:
+                            cell.text = cell.text.replace(key, value)
     
     @staticmethod
     def agregar_tabla_word(doc,tabla_datos_hoja1):
