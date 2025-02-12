@@ -6,6 +6,7 @@ import xlwings as xw
 import openpyxl
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 import os
+import win32com.client
 from models.document_request import DocumentRequest
 from docx import Document
 from docxtpl import DocxTemplate
@@ -109,18 +110,15 @@ class OneOwner(ContractStrategy):
         OneOwner.eliminar_parrafos_innecesarios(document)
         OneOwner.eliminar_desde_marcador(document, '${eliminar}')
         
-        ruta_word = './documento_contado_final.docx'
-        ruta_excel='lib/calculadora.xlsx'
+        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+
+        ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
         
         document.save(ruta_word)
         
-        OneOwner.actualizar_excel(ruta_excel, request)
-        
-        # Leer datos del archivo Excel
-        tabla_datos = OneOwner.leer_datos_excel(ruta_excel)
-        OneOwner.actualizar_documento_word(ruta_word, tabla_datos)
-        
-        return {"message": "Contrato al contado generado para dos propietarios."}
+        ruta_pdf = OneOwner.convertir_word_a_pdf(ruta_word, output_folder)
+
+        return {"message": "Contrato al contado generado para dos propietarios.", "word_path": ruta_word, "pdf_path": ruta_pdf}
     
     @staticmethod
     def financed_type(request: DocumentRequest, document: Document):
@@ -192,7 +190,10 @@ class OneOwner(ContractStrategy):
         OneOwner.reemplazar_marcadores(document, valores)
         OneOwner.dejar_el_marcador(document)
         
-        ruta_word = './documento_financiado_final.docx'
+        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+        
+        ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
+        
         ruta_excel='lib/calculadora.xlsx'
 
         document.save(ruta_word)
@@ -203,9 +204,10 @@ class OneOwner(ContractStrategy):
         tabla_datos = OneOwner.leer_datos_excel(ruta_excel)
         parametros = OneOwner.getCampoEspecifico(ruta_excel)
         OneOwner.actualizar_documento_word_excel(ruta_word, tabla_datos, parametros)
+                
+        ruta_pdf = OneOwner.convertir_word_a_pdf(ruta_word, output_folder)
         
-        
-        return {"message": "Contrato financiado generado para dos propietarios."}
+        return {"message": "Contrato al contado generado para dos propietarios.", "word_path": ruta_word, "pdf_path": ruta_pdf}    
     
     @staticmethod
     def fractionated_type(request: DocumentRequest, document: Document):
@@ -277,9 +279,15 @@ class OneOwner(ContractStrategy):
         OneOwner.eliminar_parrafos_innecesarios_fractioned(document)
         OneOwner.eliminar_desde_marcador(document, '${eliminar}')    
         
-        document.save('documento_fraccionado_final.docx')
+        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
         
-        return {"message": "Contrato fraccionado generado para dos propietarios."}
+        ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
+
+        document.save(ruta_word)
+        
+        ruta_pdf = OneOwner.convertir_word_a_pdf(ruta_word, output_folder)
+
+        return {"message": "Contrato al contado generado para dos propietarios.", "word_path": ruta_word, "pdf_path": ruta_pdf}    
     
     @staticmethod
     def actualizarCamposEspecificos(ruta_word, parametros):
@@ -587,3 +595,40 @@ class OneOwner(ContractStrategy):
             if '${texto_1}' in paragraph.text:
                 p = paragraph._element               
                 p.getparent().remove(p)
+    
+    @staticmethod
+    def convertir_word_a_pdf(word_file, output_folder):
+        if not os.path.exists(word_file):
+            print(f"❌ Error: No se encontró el archivo {word_file}.")
+            return None
+
+        # Crear la carpeta si no existe
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)  
+
+        try:
+            word = win32com.client.Dispatch("Word.Application")
+            word.Visible = False  
+
+            doc = word.Documents.Open(os.path.abspath(word_file))
+
+            # Nombre del archivo sin extensión
+            file_name = os.path.splitext(os.path.basename(word_file))[0]
+
+            # Ruta final del PDF
+            pdf_file = os.path.join(output_folder, f"{file_name}.pdf")
+
+            # Guardar como PDF en la carpeta deseada
+            doc.SaveAs(pdf_file, FileFormat=17)
+
+            doc.Close()
+            word.Quit()
+            
+            print(f"✅ PDF guardado en: {pdf_file}")
+            return pdf_file
+
+        except Exception as e:
+            print(f"❌ Error al convertir Word a PDF: {e}")
+            word.Quit()
+            return None
+

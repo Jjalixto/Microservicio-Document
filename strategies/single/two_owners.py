@@ -6,6 +6,8 @@ from services.lote_service import LoteService
 
 import xlwings as xw
 import openpyxl
+import win32com.client
+import os
 
 from docx import Document
 from docxtpl import DocxTemplate
@@ -21,7 +23,7 @@ class TwoOwners(ContractStrategy):
     @staticmethod
     def process_request(request: DocumentRequest):
         #Carga del documento
-        document = DocxTemplate('lib/nuevo.docx')
+        document = DocxTemplate('lib/Contract-Single-Two.docx')
         condicion = TwoOwners.validacion_condicion(request, document)
         
         return condicion
@@ -100,6 +102,10 @@ class TwoOwners(ContractStrategy):
             'cuo_init_letras': request.cuo_init_letras or '',
             'cantidad_anios': request.cantidad_anios or '',
             'fecha_primera_cuota': request.fecha_primera_cuota or '',
+            'precio_mitad_1': f"{float(request.precio_mitad_1):,.2f}",
+            'precio_mitad_letras_1': request.precio_mitad_letras_1 or '',
+            'precio_mitad_2': f"{float(request.precio_mitad_2):,.2f}",
+            "precio_mitad_letras_2": request.precio_mitad_letras_2 or '',
         }
         
         document.render(valores)
@@ -108,18 +114,15 @@ class TwoOwners(ContractStrategy):
         TwoOwners.eliminar_parrafos_innecesarios(document)
         TwoOwners.eliminar_desde_marcador(document, '${eliminar}')
         
-        ruta_word = './documento_contado_final.docx'
-        ruta_excel='lib/calculadora.xlsx'
+        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
         
+        ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
+                
         document.save(ruta_word)
         
-        TwoOwners.actualizar_excel(ruta_excel, request)
-        
-        # Leer datos del archivo Excel
-        tabla_datos = TwoOwners.leer_datos_excel(ruta_excel)
-        TwoOwners.actualizar_documento_word(ruta_word, tabla_datos)
-        
-        return {"message": "Contrato al contado generado para dos propietarios."}
+        ruta_pdf = TwoOwners.convertir_word_a_pdf(ruta_word, output_folder)
+
+        return {"message": "Contrato al contado generado para dos propietarios.", "word_path": ruta_word, "pdf_path": ruta_pdf}
     
     @staticmethod
     def financed_type(request: DocumentRequest, document: Document):
@@ -196,7 +199,9 @@ class TwoOwners(ContractStrategy):
         TwoOwners.reemplazar_marcadores(document, valores)
         TwoOwners.dejar_el_marcador(document)
         
-        ruta_word = './documento_financiado_final.docx'
+        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+        
+        ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
         ruta_excel='lib/calculadora.xlsx'
 
         document.save(ruta_word)
@@ -208,7 +213,9 @@ class TwoOwners(ContractStrategy):
         parametros = TwoOwners.getCampoEspecifico(ruta_excel)
         TwoOwners.actualizar_documento_word_excel(ruta_word, tabla_datos, parametros)
         
-        return {"message": "Contrato financiado generado para dos propietarios."}
+        ruta_pdf = TwoOwners.convertir_word_a_pdf(ruta_word, output_folder)
+
+        return {"message": "Contrato al contado generado para dos propietarios.", "word_path": ruta_word, "pdf_path": ruta_pdf}    
     
     @staticmethod
     def fractionated_type(request: DocumentRequest, document: Document):
@@ -277,9 +284,15 @@ class TwoOwners(ContractStrategy):
         TwoOwners.eliminar_parrafos_innecesarios_fractioned(document)
         TwoOwners.eliminar_desde_marcador(document, '${eliminar}')    
         
-        document.save('documento_fraccionado_final.docx')
+        output_folder = r"C:\Users\JoelJalixtoChavez\Desktop\Microservicio-Document"
+
+        ruta_word = os.path.join(output_folder, f"Minuta_CV_{request.name_1}_{request.number_batch}.docx")
+
+        document.save(ruta_word)
         
-        return {"message": "Contrato fraccionado generado para dos propietarios."}
+        ruta_pdf = TwoOwners.convertir_word_a_pdf(ruta_word, output_folder)
+
+        return {"message": "Contrato al contado generado para dos propietarios.", "word_path": ruta_word, "pdf_path": ruta_pdf}    
     
     @staticmethod
     def actualizar_excel(ruta_excel, request: DocumentRequest):
@@ -589,3 +602,39 @@ class TwoOwners(ContractStrategy):
             if '${texto_1}' in paragraph.text:
                 p = paragraph._element               
                 p.getparent().remove(p)
+                
+    @staticmethod
+    def convertir_word_a_pdf(word_file, output_folder):
+        if not os.path.exists(word_file):
+            print(f"❌ Error: No se encontró el archivo {word_file}.")
+            return None
+
+        # Crear la carpeta si no existe
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)  
+
+        try:
+            word = win32com.client.Dispatch("Word.Application")
+            word.Visible = False  
+
+            doc = word.Documents.Open(os.path.abspath(word_file))
+
+            # Nombre del archivo sin extensión
+            file_name = os.path.splitext(os.path.basename(word_file))[0]
+
+            # Ruta final del PDF
+            pdf_file = os.path.join(output_folder, f"{file_name}.pdf")
+
+            # Guardar como PDF en la carpeta deseada
+            doc.SaveAs(pdf_file, FileFormat=17)
+
+            doc.Close()
+            word.Quit()
+            
+            print(f"✅ PDF guardado en: {pdf_file}")
+            return pdf_file
+
+        except Exception as e:
+            print(f"❌ Error al convertir Word a PDF: {e}")
+            word.Quit()
+            return None

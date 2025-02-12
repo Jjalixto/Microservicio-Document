@@ -1,0 +1,42 @@
+name: App Authentication
+
+on: [push]
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    # Paso 1: Conexión al servidor por SSH
+    - name: SSH into the server
+      uses: appleboy/ssh-action@v0.1.9
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.NAME }}
+        password: ${{ secrets.PASSWORD }}
+        port: ${{ secrets.PORT }}
+        script: |
+          # Verificar si el contenedor 'app-authentication' está corriendo y detenerlo si es necesario
+          if docker ps -q -f name=app-authentication; then
+            echo "Deteniendo el contenedor app-authentication..."
+            docker stop app-authentication
+            docker rm app-authentication
+          fi
+
+          # Verificar si el directorio /home/microservicio/adc_python existe
+          if [ -d "/home/microservicio/adc_python" ]; then
+            echo "Eliminando el repositorio existente..."
+            rm -rf /home/microservicio/adc_python
+          fi
+
+          # Clonar o actualizar el repositorio
+          cd /home/microservicio 
+          git clone https://github.com/rafaeltolap/adc_python.git
+          
+          # Construir y levantar contenedor con Docker Compose
+          cd /home/microservicio/adc_python
+          docker-compose up -d
+
+          # Verificar si el contenedor se está ejecutando
+          docker ps
